@@ -1,0 +1,439 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ComCtrls, StdCtrls, jpeg, ExtCtrls, shellAPI, TlHelp32;
+
+type
+  save=record
+      s1:array[1..250] of string[255];
+     end;
+  obj=array[1..250] of save;
+  TForm1 = class(TForm)
+    PageControl1: TPageControl;
+    TabSheet1: TTabSheet;
+    TabSheet2: TTabSheet;
+    TabSheet3: TTabSheet;
+    TabSheet4: TTabSheet;
+    TabSheet5: TTabSheet;
+    TabSheet6: TTabSheet;
+    nameversion: TLabel;
+    nachalovibiritepatch: TLabel;
+    GroupBox1: TGroupBox;
+    patch1901: TRadioButton;
+    patch1506: TRadioButton;
+    patch1514: TRadioButton;
+    patch1517: TRadioButton;
+    patch15114: TRadioButton;
+    pomoshvseliverno: TLabel;
+    hpbig: TLabel;
+    hpbar: TProgressBar;
+    hpvashegopersa: TLabel;
+    hpshas: TLabel;
+    hpiz: TLabel;
+    hpmax: TLabel;
+    hpsostavlaet: TLabel;
+    hpproc: TLabel;
+    hpznachek: TLabel;
+    mpznachek: TLabel;
+    mpsostavlaet: TLabel;
+    mpbig: TLabel;
+    mpiz: TLabel;
+    mpbar: TProgressBar;
+    mpmax: TLabel;
+    mpproc: TLabel;
+    mpvashegopersa: TLabel;
+    mpshas: TLabel;
+    celtext: TLabel;
+    hpceli: TLabel;
+    hpcelibar: TProgressBar;
+    Label1: TLabel;
+    hpceliproc: TLabel;
+    skillminiopisanie: TLabel;
+    skill1: TCheckBox;
+    skill2: TCheckBox;
+    skill3: TCheckBox;
+    skill4: TCheckBox;
+    skill5: TCheckBox;
+    skill6: TCheckBox;
+    skill7: TCheckBox;
+    skill8: TCheckBox;
+    skill9: TCheckBox;
+    skill10: TCheckBox;
+    skill11: TCheckBox;
+    skill12: TCheckBox;
+    textdopskills: TLabel;
+    skill13: TCheckBox;
+    skill14: TCheckBox;
+    skill15: TCheckBox;
+    skill16: TCheckBox;
+    skill17: TCheckBox;
+    skill18: TCheckBox;
+    skill19: TCheckBox;
+    skill20: TCheckBox;
+    skill21: TCheckBox;
+    skill22: TCheckBox;
+    skill23: TCheckBox;
+    skill24: TCheckBox;
+    altlus: TLabel;
+    skill36: TCheckBox;
+    skill35: TCheckBox;
+    skill34: TCheckBox;
+    skill33: TCheckBox;
+    skill32: TCheckBox;
+    skill31: TCheckBox;
+    skill30: TCheckBox;
+    skill29: TCheckBox;
+    skill28: TCheckBox;
+    skill27: TCheckBox;
+    skill26: TCheckBox;
+    skill25: TCheckBox;
+    ctrlplus: TLabel;
+    textdopskills2: TLabel;
+    livemoblabel: TLabel;
+    Image1: TImage;
+    function getmodulebase(PID: DWord; moduleName: PChar): dword;
+    procedure offsets;
+    procedure HP;
+    procedure HPvsego;
+    procedure MP;
+    procedure MPvsego;
+    procedure targethp;
+    function proverkamoba:Boolean;
+    function livemob:boolean;
+    procedure skills;
+    procedure buttons;
+    procedure nexttarget;
+    procedure hpmpproc;
+    procedure patch1901Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+ baff=array[1..10] of string[255];
+ aray=array[1..1000] of string;
+ sbaff=array[1..10] of string[255];
+var
+  Form1: TForm1;
+  hpoffset,hpmaxoffset,mpoffset,mpmaxoffset,hpcelioffset,proverkamobaoffset,livemoboffset,sk:string;
+  WindowName,ProcessId,ThreadId,HandleWindow,ii,itab:integer;
+  outbytes: cardinal;
+  buf,address,result,address2,address3,sizebyte: dword;
+  value: Word;
+  h: hwnd;
+  Pointer1addr, pointer2addr: pointer;
+  baf:baff;
+  skil:aray;
+  sbaf:sbaff;
+  ss: save;
+  ob: obj;
+  HPprocenty,MPprocenty:Real;
+
+implementation
+
+{$R *.dfm}
+
+//****************************  ИЩИМ PID ПРОЦЕССА *********************
+Function tform1.GetModuleBase(PID: DWord; moduleName: PChar): dword;
+var
+   snapshot: THandle;
+   modules:TModuleEntry32;
+begin
+  result := 0;
+  snapshot := CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessId);
+  modules.dwSize := sizeof(TModuleEntry32);
+  if Module32First(snapshot, modules) then
+    While Module32Next(snapshot, modules) do
+    if StrComp(moduleName, modules.szModule) = 0 then
+      begin
+       CloseHandle(snapshot);
+       result := dword(modules.modBaseAddr);
+       exit;
+      end;
+   CloseHandle(snapshot);
+end;
+//****************************  ИЩИМ PID ПРОЦЕССА *********************
+//**************************** Забиваем оффсеты под патч **************
+procedure tform1.offsets;
+begin
+ if patch1506.Checked=True then  //патч 1.5.0.6
+  begin
+    hpoffset:='$8EDDC8';
+    hpmaxoffset:='$8EDDC4';
+    mpoffset:='$8EDDD0';
+    mpmaxoffset:='$8EDDCC';
+    hpcelioffset:='$4F5874';
+    proverkamobaoffset:='$4F5878';
+    livemoboffset:='$4F5874';
+  end;
+ if patch1514.Checked=True then  //патч 1.5.1.4
+  begin
+    hpoffset:='$A27720';
+    hpmaxoffset:='$A2771C';
+    mpoffset:='$A27728';
+    mpmaxoffset:='$A27724';
+    hpcelioffset:='$62EB7C';
+    proverkamobaoffset:='$62EB7C';
+    livemoboffset:='$62EB7C';
+  end;
+ if patch1517.Checked=True then  //патч 1.5.1.7
+  begin
+    hpoffset:='$A2F9B0';
+    hpmaxoffset:='$A2F9AC';
+    mpoffset:='$A2F9B8';
+    mpmaxoffset:='$A2F9B4';
+    hpcelioffset:='$636BBC';
+    proverkamobaoffset:='$636BBC';
+    livemoboffset:='$636BBC';
+  end;
+
+end;
+//**************************** Забиваем оффсеты под патч **************
+//****************************  HP персонажа **************************
+procedure tform1.hp;
+begin
+  address:=GetModuleBase(ProcessId, 'Game.dll')+strtoint(hpoffset);
+  HandleWindow :=FindWindow(nil, 'AION Client');
+    if(HandleWindow  <> 0) then
+      GetWindowThreadProcessId(HandleWindow  ,@ProcessId);
+      h:=OpenProcess(PROCESS_ALL_ACCESS,False,ProcessID);
+        if(h <> 0) then
+          begin
+            if(ReadProcessMemory(h, Pointer(address), @buf, sizeof(DWORD), outbytes) and (outbytes = sizeof(DWORD))) then
+              begin
+                hpshas.Caption:=IntTostr(buf);
+              end;
+            CloseHandle(h);
+          end;
+end;
+//****************************  HP персонажа **************************
+//****************************  Максимальное HP персонажа *************
+procedure tform1.HPvsego;
+begin
+  address := GetModuleBase(ProcessId, 'Game.dll')+strtoint(hpmaxoffset);
+  HandleWindow :=FindWindow(nil, 'AION Client');
+    if(HandleWindow  <> 0) then
+      GetWindowThreadProcessId(HandleWindow  ,@ProcessId);
+      h:=OpenProcess(PROCESS_ALL_ACCESS,False,ProcessID);
+        if(h <> 0) then
+          begin
+            if(ReadProcessMemory(h, Pointer(address), @buf, sizeof(DWORD), outbytes) and (outbytes = sizeof(DWORD))) then
+              begin
+                hpmax.Caption:=IntTostr(buf);
+              end;
+            CloseHandle(h);
+          end;
+end;
+//****************************  Максимальное HP персонажа *************
+//****************************  MP персонажа **************************
+procedure tform1.mp;
+begin
+  address := GetModuleBase(ProcessId, 'Game.dll')+strtoint(mpoffset);
+  HandleWindow :=FindWindow(nil, 'AION Client');
+    if(HandleWindow  <> 0) then
+      GetWindowThreadProcessId(HandleWindow  ,@ProcessId);
+      h:=OpenProcess(PROCESS_ALL_ACCESS,False,ProcessID);
+        if(h <> 0) then
+          begin
+            if(ReadProcessMemory(h, Pointer(address), @buf, sizeof(DWORD), outbytes) and (outbytes = sizeof(DWORD))) then
+              begin
+                mpshas.Caption:=IntTostr(buf);
+              end;
+            CloseHandle(h);
+          end;
+end;
+//****************************  MP персонажа **************************
+//****************************  Максимальное MP персонажа *************
+procedure tform1.MPvsego;
+begin
+  address := GetModuleBase(ProcessId, 'Game.dll')+strtoint(mpmaxoffset);
+  HandleWindow :=FindWindow(nil, 'AION Client');
+    if(HandleWindow  <> 0) then
+      GetWindowThreadProcessId(HandleWindow  ,@ProcessId);
+      h:=OpenProcess(PROCESS_ALL_ACCESS,False,ProcessID);
+        if(h <> 0) then
+          begin
+            if(ReadProcessMemory(h, Pointer(address), @buf, sizeof(DWORD), outbytes) and (outbytes = sizeof(DWORD))) then
+              begin
+                mpmax.Caption:=IntTostr(buf);
+              end;
+            CloseHandle(h);
+          end;
+end;
+//****************************  Максимальное MP персонажа *************
+//**************************** ХП цели ********************************
+procedure tform1.targethp;
+var
+  tmp: integer;
+  byte1: Byte;
+begin
+  address := GetModuleBase(ProcessId, 'Game.dll')+strtoint(hpcelioffset);
+  HandleWindow :=FindWindow(nil, 'AION Client');
+    if(HandleWindow  <> 0) then
+      GetWindowThreadProcessId(HandleWindow  ,@ProcessId);
+      h:=OpenProcess(PROCESS_ALL_ACCESS,False,ProcessId);
+        if(h <> 0) then
+          begin
+            if(ReadProcessMemory(h, Pointer(address), @buf, 4, outbytes) and (outbytes = sizeof(DWORD))) then
+              begin
+                address2:=buf+452;
+                if(ReadProcessMemory(h, Pointer(address2), @buf, 4, outbytes) and (outbytes = sizeof(DWORD))) then
+                  begin
+                    address3:=buf+52;
+                      if(ReadProcessMemory(h, Pointer(address3), @buf, 1, outbytes) and (outbytes = 1)) then
+                        begin
+                          byte1:=buf;
+                          hpceliproc.Caption:=IntTostr(byte1);
+                          hpcelibar.Position:=strtoint(hpceliproc.caption);
+                        end;
+                  end;
+                end;
+              CloseHandle(h);
+            end;
+end;
+//**************************** ХП цели ********************************
+//**************************** когда кликнут по патчу 1.9.0.1 покажет ХП МП
+procedure TForm1.patch1901Click(Sender: TObject);
+begin
+offsets;
+hp;
+hmvsego;
+mp;
+mpvsego;
+end;
+//**************************** когда кликнут по патчу 1.9.0.1 покажет ХП МП
+//**************************** Проверяем моба на наличие в таргете ****
+function tform1.proverkamoba:Boolean;
+begin
+  address := GetModuleBase(ProcessId, 'Game.dll')+strtoint(proverkamobaoffset);
+  HandleWindow :=FindWindow(nil, 'AION Client');
+    if(HandleWindow  <> 0) then
+      GetWindowThreadProcessId(HandleWindow  ,@ProcessId);
+      h:=OpenProcess(PROCESS_ALL_ACCESS,False,ProcessID);
+        if(h <> 0) then
+          begin
+            if(ReadProcessMemory(h, Pointer(address), @buf, sizeof(DWORD), outbytes) and (outbytes = sizeof(DWORD))) then
+              begin
+                if buf=StrToInt('0') then proverkamoba:=False else  proverkamoba:=True;
+              end;
+            CloseHandle(h);
+          end;
+end;
+//**************************** Проверяем моба на наличие в таргете ****
+//**************************** Проверка живой моб или нет *************
+function TForm1.livemob:boolean;
+var
+  tmp: integer;
+  byte1: Byte;
+begin
+  address := GetModuleBase(ProcessId, 'Game.dll')+strtoint(livemoboffset);
+  HandleWindow :=FindWindow(nil, 'AION Client');
+    if(HandleWindow  <> 0) then
+      GetWindowThreadProcessId(HandleWindow  ,@ProcessId);
+      h := OpenProcess(PROCESS_ALL_ACCESS,False,ProcessId);
+        if(h <> 0) then
+          begin
+            if(ReadProcessMemory(h, Pointer(address), @buf, 4, outbytes) and (outbytes = sizeof(DWORD))) then
+              begin
+                address2:=buf+8;
+                if(ReadProcessMemory(h, Pointer(address2), @buf, 1, outbytes) and (outbytes = 1)) then
+                  begin
+                    byte1:=buf;
+                    livemoblabel.Caption:=IntTostr(byte1);
+                  end;
+              end;
+            CloseHandle(h);
+          end;
+            if livemoblabel.caption='9' then livemob:=True else livemob:=False;
+
+  end;
+//**************************** Проверка живой моб или нет *************
+//**************************** Скиллы *********************************
+procedure TForm1.skills;
+var i:integer;
+begin
+
+skil[1]:='1';
+skil[2]:='2';
+skil[3]:='3';
+skil[4]:='4';
+skil[5]:='5';
+skil[6]:='6';
+skil[7]:='7';
+skil[8]:='8';
+skil[9]:='9';
+skil[10]:='0';
+skil[11]:='-';
+skil[12]:='=';
+
+  for i:=1 to 12 do
+    begin
+    sk:=skil[i];
+    buttons;
+    SendMessage(HandleWindow,WM_KEYDOWN,StrToInt(sk),0);
+    Sleep(70);
+    end;
+ { for i:=13 to 24 do
+   begin
+    if (skill[i].checked='True')  then
+    begin
+    sk:=skill[i].caption;
+    buttons;
+    keybd_event(VK_CONTROL,0, 0,  0);
+    SendMessage(HandleWindow,WM_KEYDOWN,StrToInt(sk),0);
+    keybd_event(VK_CONTROL,0, KEYEVENTF_KEYUP,  0);
+      Sleep(70);
+    end;
+   end;
+  for i:=25 to 36 do
+   begin
+    if (skill[i].checked='True')  then
+    begin
+    sk:=skill[i].caption;
+    buttons;
+    keybd_event($12,0, 0,  0);
+    SendMessage(HandleWindow,WM_KEYDOWN,StrToInt(sk),0);
+    keybd_event($12,0, KEYEVENTF_KEYUP,  0);
+      Sleep(70);
+    end;
+   end; }
+end;
+//**************************** Скиллы *********************************
+//**************************** Преобразовываем кнопки в коды **********
+procedure TForm1.buttons;
+begin
+  if sk='0' then sk:='$30';
+  if sk='1' then sk:='$31';
+  if sk='2' then sk:='$32';
+  if sk='3' then sk:='$33';
+  if sk='4' then sk:='$34';
+  if sk='5' then sk:='$35';
+  if sk='6' then sk:='$36';
+  if sk='7' then sk:='$37';
+  if sk='8' then sk:='$38';
+  if sk='9' then sk:='$39';
+  if sk='-' then sk:='$BD';
+  if sk='=' then sk:='$BB';
+end;
+//**************************** Преобразовываем кнопки в коды **********
+//**************************** Следующий таргет ***********************
+procedure TForm1.nexttarget;
+begin
+  SendMessage(HandleWindow,WM_KEYDOWN,VK_MBUTTON,0);
+  SendMessage(HandleWindow,WM_KEYUP,VK_MBUTTON,0);
+  SendMessage(HandleWindow,WM_KEYDOWN,VK_TAB,0);
+end;
+//**************************** Следующий таргет ***********************
+//**************************** Переводим ХП и МП в проценты ***********
+procedure TForm1.hpmpproc;
+begin
+ HPProcenty:=((StrToFloat(hpshas.Caption)/StrToFloat(hpmax.Caption))*100);
+ hpproc.Caption:=FormatFloat('#.',HPProcenty);
+ MPProcenty:=((StrToFloat(mpshas.Caption)/strtofloat(mpmax.Caption))*100);
+ mpproc.Caption:=FormatFloat('#.',MPProcenty);
+end;
+//**************************** Переводим ХП и МП в проценты ***********
+end.
